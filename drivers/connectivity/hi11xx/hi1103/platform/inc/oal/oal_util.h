@@ -97,39 +97,6 @@ extern "C" {
 #endif
 #endif
 
-/* 解决圈复杂度 */
-#define OAL_VALUE_EQ_ANY2(_value, _val0, _val1) \
-    (((_val0) == (_value)) || ((_val1) == (_value)))
-#define OAL_VALUE_EQ_ANY3(_value, _val0, _val1, _val2) \
-    (((_val0) == (_value)) || ((_val1) == (_value)) || ((_val2) == (_value)))
-
-#define OAL_VALUE_EQ_ANY4(_value, _val0, _val1, _val2, _val3) \
-    (((_val0) == (_value)) || ((_val1) == (_value)) || ((_val2) == (_value)) || ((_val3) == (_value)))
-
-#define OAL_VALUE_EQ_ALL2(_value, _val0, _val1) \
-    (((_val0) == (_value)) && ((_val1) == (_value)))
-
-#define OAL_VALUE_IN_VALID_RANGE(_value, _start, _end)       (((_value) >= (_start)) && ((_value) <=(_end)))
-#define OAL_VALUE_NOT_IN_VALID_RANGE(_value, _start, _end)   (((_value) < (_start)) || ((_value) > (_end)))
-#define OAL_ANY_TRUE_VALUE2(_val0, _val1)                    (((_val0) == OAL_TRUE) || ((_val1) == OAL_TRUE))
-#define OAL_VALUE_NE_ALL2(value, _val0, _val1)               (((_val0) != (value)) && ((_val1) != (value)))
-#define OAL_ANY_ZERO_VALUE2(_val0, _val1)                    (((_val0) == 0) || ((_val1) == 0))
-
-#define OAL_ANY_NULL_PTR1(_ptr1)                             (((_ptr1) == NULL))
-#define OAL_ANY_NULL_PTR2(_ptr1, _ptr2)                      (((_ptr1) == NULL) || ((_ptr2) == NULL))
-#define OAL_ANY_NULL_PTR3(_ptr1, _ptr2, _ptr3)               (((_ptr1) == NULL) || ((_ptr2) == NULL) || \
-                                                              ((_ptr3) == NULL))
-#define OAL_ANY_NULL_PTR4(_ptr1, _ptr2, _ptr3, _ptr4)        (((_ptr1) == NULL) || ((_ptr2) == NULL) || \
-                                                              ((_ptr3) == NULL) || ((_ptr4) == NULL))
-#define OAL_ANY_NULL_PTR5(_ptr1, _ptr2, _ptr3, _ptr4, _ptr5) (((_ptr1) == NULL) || ((_ptr2) == NULL) || \
-                                                              ((_ptr3) == NULL) || ((_ptr4) == NULL) || \
-                                                              ((_ptr5) == NULL))
-#define OAL_ALL_NOT_NULL_PTR2(_ptr1, _ptr2)                   (((_ptr1) != NULL) && ((_ptr2) != NULL))
-#define OAL_ALL_TRUE_VALUE2(_val0, _val1)                     (((_val0) == OAL_TRUE) && ((_val1) == OAL_TRUE))
-
-#define OAL_ALL_ZERO_VALUE2(_val0, _val1)                     (((_val0) == 0) && ((_val1) == 0))
-
-
 /* 比较宏 */
 #define OAL_MIN(_A, _B) (((_A) < (_B))? (_A) : (_B))
 

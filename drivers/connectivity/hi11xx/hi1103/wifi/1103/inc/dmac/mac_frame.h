@@ -63,8 +63,6 @@ extern "C" {
 #define MAC_DEFAULT_TIM_LEN         4
 #define MAC_MIN_RSN_LEN             12
 #define MAC_MAX_RSN_LEN             64
-#define MAC_MIN_WPA_LEN             12
-
 #define MAC_TIM_LEN_EXCEPT_PVB      3   /* DTIM Period、DTIM Count与BitMap Control三个字段的长度 */
 #define MAC_CONTRY_CODE_LEN         3   /* 国家码长度为3 */
 #define MAC_MIN_COUNTRY_LEN         6
@@ -166,9 +164,6 @@ extern "C" {
 #define MAC_OUISUBTYPE_WMM_PARAM_OFFSET 6 /* wmm 字段中EDCA_INFO位置,表示是否携带EDCA参数 偏移6 */
 #define MAC_WMM_QOS_INFO_POS        8   /* wmm 字段中qos info位置，偏移8 */
 #define MAC_OUI_WMM_VERSION         1
-#define MAC_WMM_IE_LEN              7   /* wmm ie长度为7 */
-
-
 #ifdef _PRE_WLAN_FEATURE_WMMAC
 #define MAC_OUISUBTYPE_WMMAC_TSPEC  2   /*WMMAC TSPEC OUI subtype*/
 #endif

@@ -308,13 +308,6 @@ typedef struct wal_android_wifi_priv_cmd {
     oal_uint8   *puc_buf;
 }wal_android_wifi_priv_cmd_stru;
 
-typedef struct wal_wifi_priv_cmd {
-    oal_uint32    ul_total_len;
-    oal_uint32    ul_used_len;
-    oal_uint8    *puc_buf;
-}wal_wifi_priv_cmd_stru;
-
-
 typedef struct
 {
     oal_int8                           *pc_name;        /* ÅäÖÃÃüÁî×Ö·û´® */

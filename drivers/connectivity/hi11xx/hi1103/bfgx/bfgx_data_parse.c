@@ -2124,13 +2124,8 @@ void ps_core_tx_work_etc(struct work_struct *work)
         return;
     }
 
-    /* makesure tty is avilable. release_tty_drv race access tty */
-    mutex_lock(&g_tty_mutex_etc);
-    if (ps_core_d->tty != NULL) {
-        /* into tx skb buff queue */
-        ps_core_tx_attemper_etc(ps_core_d);
-    }
-    mutex_unlock(&g_tty_mutex_etc);
+    /* into tx skb buff queue */
+    ps_core_tx_attemper_etc(ps_core_d);
 
     return;
 }
@@ -2254,7 +2249,7 @@ int32 ps_tx_sys_cmd_etc(struct ps_core_s *ps_core_d, uint8 type, uint8 content)
         return -EINVAL;
     }
 
-    skb = alloc_skb(SYS_TOTAL_PACKET_LENTH, (oal_in_interrupt() || oal_in_atomic()) ? GFP_ATOMIC : GFP_KERNEL);
+    skb = alloc_skb(SYS_TOTAL_PACKET_LENTH, oal_in_interrupt() ? GFP_ATOMIC : GFP_KERNEL);
     if (NULL == skb) {
         PS_PRINT_ERR("can't allocate mem for new sys skb, len=%d\n", SYS_TOTAL_PACKET_LENTH);
         return -EINVAL;
@@ -2287,7 +2282,7 @@ int32 ps_tx_urgent_cmd(struct ps_core_s *ps_core_d, uint8 type, uint8 content)
         return -EINVAL;
     }
 
-    skb = alloc_skb(SYS_TOTAL_PACKET_LENTH, (oal_in_interrupt() || oal_in_atomic()) ? GFP_ATOMIC : GFP_KERNEL);
+    skb = alloc_skb(SYS_TOTAL_PACKET_LENTH, oal_in_interrupt() ? GFP_ATOMIC : GFP_KERNEL);
     if (NULL == skb) {
         PS_PRINT_ERR("can't allocate mem for new sys skb, len=%d\n", SYS_TOTAL_PACKET_LENTH);
         return -EINVAL;

@@ -120,18 +120,6 @@ oal_uint32 hmac_rx_bsst_req_candidate_info_check(hmac_vap_stru *pst_hmac_vap, oa
 
     return OAL_SUCC;
 }
-OAL_STATIC oal_void hmac_rx_bsst_free_res(hmac_bsst_req_info_stru *pst_bsst_req_info)
-{
-    if (pst_bsst_req_info->puc_session_url != OAL_PTR_NULL) {
-        OAL_MEM_FREE(pst_bsst_req_info->puc_session_url, OAL_TRUE);
-        pst_bsst_req_info->puc_session_url = OAL_PTR_NULL;
-    }
-
-    if (pst_bsst_req_info->pst_neighbor_bss_list != OAL_PTR_NULL) {
-        OAL_MEM_FREE(pst_bsst_req_info->pst_neighbor_bss_list, OAL_TRUE);
-        pst_bsst_req_info->pst_neighbor_bss_list = OAL_PTR_NULL;
-    }
-}
 
 
 oal_uint32 hmac_rx_bsst_req_action(hmac_vap_stru *pst_hmac_vap, hmac_user_stru *pst_hmac_user, oal_netbuf_stru *pst_netbuf)
@@ -150,7 +138,7 @@ oal_uint32 hmac_rx_bsst_req_action(hmac_vap_stru *pst_hmac_vap, hmac_user_stru *
     hmac_roam_info_stru            *pst_roam_info;
     oal_bool_enum_uint8             en_need_roam = OAL_TRUE;
 
-    if (OAL_ANY_NULL_PTR3(pst_hmac_vap, pst_hmac_user, pst_netbuf))
+    if ((OAL_PTR_NULL == pst_hmac_vap) || (OAL_PTR_NULL == pst_hmac_user) || (OAL_PTR_NULL == pst_netbuf))
     {
         OAM_ERROR_LOG3(0, OAM_SF_ANY, "{hmac_rx_bsst_req_action::null param, vap:0x%x user:0x%x buf:0x%x.}", pst_hmac_vap, pst_hmac_user, pst_netbuf);
         return OAL_ERR_CODE_PTR_NULL;
@@ -212,8 +200,7 @@ oal_uint32 hmac_rx_bsst_req_action(hmac_vap_stru *pst_hmac_vap, hmac_user_stru *
     st_bsst_req_info.uc_validity_interval = puc_data[6];
     us_handle_len = 7;              /* 前面7个字节已被处理完 */
     /* 12字节的termination duration 如果有的话 */
-    if ((st_bsst_req_info.st_request_mode.bit_termination_include) &&
-        (us_frame_len >= us_handle_len + MAC_IE_HDR_LEN + HMAC_11V_TERMINATION_TSF_LENGTH + 2))
+    if (st_bsst_req_info.st_request_mode.bit_termination_include)
     {
         us_handle_len += MAC_IE_HDR_LEN;                /* 去掉元素头 */
         oal_memcopy(st_bsst_req_info.st_term_duration.auc_termination_tsf, puc_data+us_handle_len, HMAC_11V_TERMINATION_TSF_LENGTH);
@@ -224,10 +211,10 @@ oal_uint32 hmac_rx_bsst_req_action(hmac_vap_stru *pst_hmac_vap, hmac_user_stru *
     /* 解析URL */
     /* URL字段 如果有的话 URL第一个字节为URL长度 申请动态内存保存 */
     st_bsst_req_info.puc_session_url = OAL_PTR_NULL;
-    if ((st_bsst_req_info.st_request_mode.bit_ess_disassoc_imminent) &&
-        (us_frame_len >= us_handle_len + 1)) {
-        if ((0 != puc_data[us_handle_len]) &&
-            (us_frame_len >= ((us_handle_len + 1) + puc_data[us_handle_len]))) {
+    if (st_bsst_req_info.st_request_mode.bit_ess_disassoc_imminent)
+    {
+        if (0 != puc_data[us_handle_len])
+        {
             /* 申请内存数量加1 用于存放字符串结束符 */
             us_url_count = puc_data[us_handle_len]*OAL_SIZEOF(oal_uint8)+1;
             st_bsst_req_info.puc_session_url = (oal_uint8 *)OAL_MEM_ALLOC(OAL_MEM_POOL_ID_LOCAL,us_url_count,OAL_TRUE);
@@ -350,7 +337,16 @@ oal_uint32 hmac_rx_bsst_req_action(hmac_vap_stru *pst_hmac_vap, hmac_user_stru *
     }
 
     /* 释放指针 */
-    hmac_rx_bsst_free_res(&st_bsst_req_info);
+    if (OAL_PTR_NULL != st_bsst_req_info.puc_session_url)
+    {
+        OAL_MEM_FREE(st_bsst_req_info.puc_session_url, OAL_TRUE);
+        st_bsst_req_info.puc_session_url = OAL_PTR_NULL;
+    }
+    if (OAL_PTR_NULL != st_bsst_req_info.pst_neighbor_bss_list)
+    {
+        OAL_MEM_FREE(st_bsst_req_info.pst_neighbor_bss_list, OAL_TRUE);
+        st_bsst_req_info.pst_neighbor_bss_list = OAL_PTR_NULL;
+    }
 
     return OAL_SUCC;
 }

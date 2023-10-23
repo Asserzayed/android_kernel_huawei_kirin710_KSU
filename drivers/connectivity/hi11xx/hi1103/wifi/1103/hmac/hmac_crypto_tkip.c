@@ -233,11 +233,7 @@ oal_uint32 hmac_crypto_tkip_enmic_etc(wlan_priv_key_param_stru *pst_key, oal_net
     if (oal_netbuf_tailroom(pst_netbuf) < IEEE80211_WEP_MICLEN)
     {
         /*2.2 如果原来的netbuf长度不够，需要重新申请*/
-        pst_netbuf = oal_netbuf_realloc_tailroom(pst_netbuf, IEEE80211_WEP_MICLEN);
-        if (pst_netbuf == OAL_PTR_NULL) {
-            OAM_ERROR_LOG0(0, OAM_SF_WPA, "{hmac_crypto_tkip_enmic_etc::tailroom realloc fail.}");
-            return OAL_ERR_CODE_PTR_NULL;
-        }
+        oal_netbuf_realloc_tailroom(pst_netbuf, IEEE80211_WEP_MICLEN);
     }
 
     /*3.1 获取mic及密钥 */

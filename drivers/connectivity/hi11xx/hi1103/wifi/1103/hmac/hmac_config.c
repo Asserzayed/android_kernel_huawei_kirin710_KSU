@@ -4644,7 +4644,7 @@ oal_uint32  hmac_config_set_txpower_etc(mac_vap_stru *pst_mac_vap, oal_uint16 us
     mac_vap_stru                    *pst_vap;
 #endif
     l_value = (*((oal_int32 *)puc_param) < 0) ? 0 : (*((oal_int32 *)puc_param));
-    if ((!l_value) || ((oal_uint32)(l_value + 5) < (oal_uint32)l_value))
+    if (!l_value)
     {
         return ul_ret;
     }
@@ -9130,21 +9130,34 @@ oal_uint32 hmac_config_tas_rssi_access(mac_vap_stru *pst_mac_vap, oal_uint16 us_
 
 oal_uint32  hmac_config_get_country_etc(mac_vap_stru *pst_mac_vap, oal_uint16 *pus_len, oal_uint8 *puc_param)
 {
+#if 1
 #if (_PRE_MULTI_CORE_MODE_OFFLOAD_DMAC == _PRE_MULTI_CORE_MODE)
-    mac_regdomain_info_stru     *pst_regdomain_info = OAL_PTR_NULL;
-    mac_cfg_get_country_stru    *pst_param;
+    oal_int8      ac_tmp_buff[OAM_PRINT_FORMAT_LENGTH];
+    mac_regdomain_info_stru *pst_regdomain_info                     = OAL_PTR_NULL;
 
-    pst_param = (mac_cfg_get_country_stru *)puc_param;
 
     mac_get_regdomain_info_etc(&pst_regdomain_info);
 
-    pst_param->ac_country[0] = pst_regdomain_info->ac_country[0];
-    pst_param->ac_country[1] = pst_regdomain_info->ac_country[1];
-    pst_param->ac_country[2] = pst_regdomain_info->ac_country[2];
-    *pus_len = WLAN_COUNTRY_STR_LEN;
+    OAL_SPRINTF(ac_tmp_buff, sizeof(ac_tmp_buff), "getcountry code is : %c%c.\n", pst_regdomain_info->ac_country[0], pst_regdomain_info->ac_country[1]);
+    oam_print_etc(ac_tmp_buff);
+#else
+    oal_int8                 *pc_curr_cntry;
+    mac_cfg_get_country_stru *pst_param;
 
+    pst_param = (mac_cfg_get_country_stru *)puc_param;
+
+    pc_curr_cntry = mac_regdomain_get_country_etc();
+
+    pst_param->ac_country[0] = pc_curr_cntry[0];
+    pst_param->ac_country[1] = pc_curr_cntry[1];
+    pst_param->ac_country[2] = pc_curr_cntry[2];
+
+    *pus_len = OAL_SIZEOF(mac_cfg_get_country_stru);
+
+    OAM_INFO_LOG2(pst_mac_vap->uc_vap_id, OAM_SF_CFG, "{hmac_config_get_country_etc::country[0]=%c, country[1]=%c.}",
+                  (oal_uint8)pst_param->ac_country[0], (oal_uint8)pst_param->ac_country[1]);
 #endif
-
+#endif
     OAM_INFO_LOG0(pst_mac_vap->uc_vap_id, OAM_SF_CFG, "hmac_config_get_country_etc");
 
     return OAL_SUCC;

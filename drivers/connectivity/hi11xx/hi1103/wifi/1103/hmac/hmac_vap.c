@@ -762,10 +762,6 @@ oal_uint32  hmac_search_ht_cap_ie_ap_etc(
 
     /* ±£¥Ê »Î≤Œ */
     puc_tmp_payload =  puc_payload;
-    if (puc_tmp_payload[1] < MAC_HT_CAP_LEN) {
-        OAM_WARNING_LOG1(0, OAM_SF_ANY, "{hmac_search_ht_cap_ie_ap_etc::invalid ht cap len[%d]}", puc_tmp_payload[1]);
-        return OAL_FAIL;
-    }
 
     pst_ht_hdl    = &st_ht_hdl;
     mac_user_get_ht_hdl_etc(&(pst_hmac_user_sta->st_user_base_info), pst_ht_hdl);

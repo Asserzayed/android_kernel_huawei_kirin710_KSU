@@ -416,57 +416,13 @@ oal_void  hmac_rx_clear_amsdu_last_netbuf_pointer(oal_netbuf_stru *pst_netbuf, o
 }
 
 
-
-OAL_STATIC oal_uint32 hmac_rx_init_amsdu_state(oal_netbuf_stru *pst_netbuf, dmac_msdu_proc_state_stru *pst_msdu_state)
-{
-    mac_rx_ctl_stru *pst_rx_ctrl = OAL_PTR_NULL; /* MPDU的控制信息 */
-    oal_uint32       ul_need_pull_len;
-
-    /* 首次进入该函数解析AMSDU */
-    if (OAL_ALL_ZERO_VALUE2(pst_msdu_state->uc_procd_netbuf_nums, pst_msdu_state->uc_procd_msdu_in_netbuf)) {
-        pst_msdu_state->pst_curr_netbuf      = pst_netbuf;
-
-        /* AMSDU时，首个netbuf的中包含802.11头，对应的payload需要偏移 */
-        pst_rx_ctrl = (mac_rx_ctl_stru *)oal_netbuf_cb(pst_msdu_state->pst_curr_netbuf);
-
-        pst_msdu_state->puc_curr_netbuf_data   = (oal_uint8*)MAC_GET_RX_CB_MAC_HEADER_ADDR(pst_rx_ctrl) +
-                                                 pst_rx_ctrl->uc_mac_header_len;
-        pst_msdu_state->uc_netbuf_nums_in_mpdu = pst_rx_ctrl->bit_buff_nums;
-        pst_msdu_state->uc_msdu_nums_in_netbuf = pst_rx_ctrl->uc_msdu_in_buffer;
-        pst_msdu_state->us_submsdu_offset      = 0;
-
-        /* 使netbuf 指向amsdu 帧头 */
-        ul_need_pull_len = (oal_uint32)(pst_msdu_state->puc_curr_netbuf_data - oal_netbuf_payload(pst_netbuf));
-        oal_netbuf_pull(pst_msdu_state->pst_curr_netbuf, ul_need_pull_len);
-    }
-
-    return OAL_SUCC;
-}
-
-
-OAL_STATIC oal_uint32 hmac_rx_amsdu_check_frame_len(oal_netbuf_stru *pst_netbuf,
-                                    dmac_msdu_proc_state_stru *pst_msdu_state,
-                                    oal_uint16 us_submsdu_len,
-                                    oal_uint8 uc_submsdu_pad_len)
-{
-    if (us_submsdu_len > WLAN_MAX_NETBUF_SIZE ||
-        (pst_msdu_state->us_submsdu_offset + MAC_SUBMSDU_HEADER_LEN + us_submsdu_len >
-            OAL_NETBUF_LEN(pst_netbuf))) {
-        return OAL_FAIL;
-    }
-
-    return OAL_SUCC;
-}
-
-
-
-OAL_STATIC oal_uint32  hmac_rx_parse_amsdu_etc(
+oal_uint32  hmac_rx_parse_amsdu_etc(
                 oal_netbuf_stru                    *pst_netbuf,
                 dmac_msdu_stru                     *pst_msdu,
                 dmac_msdu_proc_state_stru          *pst_msdu_state,
                 mac_msdu_proc_status_enum_uint8    *pen_proc_state)
 {
-    mac_rx_ctl_stru        *pst_rx_ctrl             = OAL_PTR_NULL; /* MPDU的控制信息 */
+    mac_rx_ctl_stru       *pst_rx_ctrl;                            /* MPDU的控制信息 */
     oal_uint8              *puc_buffer_data_addr    = OAL_PTR_NULL; /* 指向netbuf数据域的指针 */
     oal_uint16              us_offset               = 0;            /* submsdu相对于data指针的偏移 */
     oal_uint16              us_submsdu_len          = 0;            /* submsdu的长度 */
@@ -474,6 +430,7 @@ OAL_STATIC oal_uint32  hmac_rx_parse_amsdu_etc(
     oal_uint8              *puc_submsdu_hdr         = OAL_PTR_NULL; /* 指向submsdu头部的指针 */
     oal_netbuf_stru        *pst_netbuf_prev;
     oal_bool_enum_uint8     b_need_free_netbuf      = OAL_FALSE;
+    oal_uint32              ul_need_pull_len;
 
     if (OAL_UNLIKELY(OAL_PTR_NULL == pst_netbuf))
     {
@@ -482,7 +439,23 @@ OAL_STATIC oal_uint32  hmac_rx_parse_amsdu_etc(
     }
 
     /* 首次进入该函数解析AMSDU */
-    hmac_rx_init_amsdu_state(pst_netbuf, pst_msdu_state);
+    if ((0 == pst_msdu_state->uc_procd_netbuf_nums)
+     && (0 == pst_msdu_state->uc_procd_msdu_in_netbuf))
+    {
+        pst_msdu_state->pst_curr_netbuf      = pst_netbuf;
+
+        /* AMSDU时，首个netbuf的中包含802.11头，对应的payload需要偏移 */
+        pst_rx_ctrl = (mac_rx_ctl_stru *)oal_netbuf_cb(pst_msdu_state->pst_curr_netbuf);
+
+        pst_msdu_state->puc_curr_netbuf_data   = (oal_uint8*)MAC_GET_RX_CB_MAC_HEADER_ADDR(pst_rx_ctrl) + pst_rx_ctrl->uc_mac_header_len;
+        pst_msdu_state->uc_netbuf_nums_in_mpdu = pst_rx_ctrl->bit_buff_nums;
+        pst_msdu_state->uc_msdu_nums_in_netbuf = pst_rx_ctrl->uc_msdu_in_buffer;
+        pst_msdu_state->us_submsdu_offset      = 0;
+
+        /* 使netbuf 指向amsdu 帧头 */
+        ul_need_pull_len = (oal_uint32)(pst_msdu_state->puc_curr_netbuf_data - oal_netbuf_payload(pst_netbuf));
+        oal_netbuf_pull(pst_msdu_state->pst_curr_netbuf, ul_need_pull_len);
+    }
 
     /* 获取submsdu的头指针 */
     puc_buffer_data_addr = pst_msdu_state->puc_curr_netbuf_data;
@@ -526,28 +499,11 @@ OAL_STATIC oal_uint32  hmac_rx_parse_amsdu_etc(
         oal_set_mac_addr(pst_msdu->auc_sa, (puc_submsdu_hdr + MAC_SUBMSDU_SA_OFFSET));
         oal_set_mac_addr(pst_msdu->auc_da, (puc_submsdu_hdr + MAC_SUBMSDU_DA_OFFSET));
 
-        if (hmac_rx_amsdu_check_frame_len(pst_netbuf, pst_msdu_state, us_submsdu_len, uc_submsdu_pad_len) != OAL_SUCC) {
-            OAM_WARNING_LOG4(0, OAM_SF_RX,
-                "hmac_rx_parse_amsdu_etc::submsdu not valid. submsdu_len %d, offset %d. msdu_nums %d, procd_msdu %d.",
-                us_submsdu_len,
-                pst_msdu_state->us_submsdu_offset,
-                pst_msdu_state->uc_msdu_nums_in_netbuf,
-                pst_msdu_state->uc_procd_msdu_in_netbuf);
-            OAM_STAT_VAP_INCR(0, rx_no_buff_dropped, 1);
-            hmac_rx_free_amsdu_netbuf(pst_msdu_state->pst_curr_netbuf);
-            return OAL_FAIL;
-        }
-
         /* 针对当前的netbuf，申请新的subnetbuf，并设置对应的netbuf的信息，赋值给对应的msdu */
         pst_msdu->pst_netbuf = OAL_MEM_NETBUF_ALLOC(OAL_NORMAL_NETBUF, (MAC_SUBMSDU_HEADER_LEN + us_submsdu_len + uc_submsdu_pad_len), OAL_NETBUF_PRIORITY_MID);
         if (OAL_PTR_NULL == pst_msdu->pst_netbuf)
         {
-            OAM_ERROR_LOG3(0, OAM_SF_RX,
-                "{hmac_rx_parse_amsdu_etc::alloc netbuf fail. submsdu len %d, pad_len %d, total_len %d}",
-                us_submsdu_len,
-                uc_submsdu_pad_len,
-                (MAC_SUBMSDU_HEADER_LEN + us_submsdu_len + uc_submsdu_pad_len));
-
+            OAM_ERROR_LOG0(0, OAM_SF_RX, "{hmac_rx_parse_amsdu_etc::pst_netbuf null.}");
             OAM_STAT_VAP_INCR(0, rx_no_buff_dropped, 1);
             hmac_rx_free_amsdu_netbuf(pst_msdu_state->pst_curr_netbuf);
             return OAL_FAIL;
