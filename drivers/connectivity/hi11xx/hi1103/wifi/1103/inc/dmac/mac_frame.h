@@ -63,6 +63,8 @@ extern "C" {
 #define MAC_DEFAULT_TIM_LEN         4
 #define MAC_MIN_RSN_LEN             12
 #define MAC_MAX_RSN_LEN             64
+#define MAC_MIN_WPA_LEN             12
+
 #define MAC_TIM_LEN_EXCEPT_PVB      3   /* DTIM Period、DTIM Count与BitMap Control三个字段的长度 */
 #define MAC_CONTRY_CODE_LEN         3   /* 国家码长度为3 */
 #define MAC_MIN_COUNTRY_LEN         6
@@ -164,6 +166,9 @@ extern "C" {
 #define MAC_OUISUBTYPE_WMM_PARAM_OFFSET 6 /* wmm 字段中EDCA_INFO位置,表示是否携带EDCA参数 偏移6 */
 #define MAC_WMM_QOS_INFO_POS        8   /* wmm 字段中qos info位置，偏移8 */
 #define MAC_OUI_WMM_VERSION         1
+#define MAC_WMM_IE_LEN              7   /* wmm ie长度为7 */
+
+
 #ifdef _PRE_WLAN_FEATURE_WMMAC
 #define MAC_OUISUBTYPE_WMMAC_TSPEC  2   /*WMMAC TSPEC OUI subtype*/
 #endif
@@ -351,6 +356,7 @@ extern "C" {
                                                 (0x92 == pst_bss_dscr->auc_bssid[2]) && (WLAN_AP_CHIP_OUI_BCM == pst_bss_dscr->en_is_tplink_oui))
 
 #define MAC_IS_FEIXUN_K3(puc_bssid)    ((0x2c == puc_bssid[0]) && (0xb2 == puc_bssid[1]) && (0x1a == puc_bssid[2]))
+#define MAC_IS_LINKSYS(puc_bssid)      ((0x60 == puc_bssid[0]) && (0x38 == puc_bssid[1]) && (0xe0 == puc_bssid[2]))
 
 #define MAC_IS_HAIER_AP(puc_bssid)      ((0x08 == puc_bssid[0]) && (0x10 == puc_bssid[1]) && (0x79 == puc_bssid[2]))
 #define MAC_IS_JCG_AP(puc_bssid)        ((0x04 == puc_bssid[0]) && (0x5f == puc_bssid[1]) && (0xa7 == puc_bssid[2]))
@@ -370,6 +376,8 @@ extern "C" {
 #define MAC_WLAN_CHIP_OUI_TYPE_APPLE_1_2        0x7
 #define MAC_WLAN_CHIP_OUI_APPLE2                0x000393
 #define MAC_WLAN_CHIP_OUI_TYPE_APPLE_2_1        0x1
+#define MAC_WLAN_CHIP_OUI_MARVELL               0x005043
+#define MAC_WLAN_CHIP_OUI_TYPE_MARVELL          0x3
 
 /* p2p相关*/
 /* GO negotiation*/

@@ -2333,6 +2333,14 @@ oal_void hmac_mgmt_update_11ntxbf_cap_etc(oal_uint8 *puc_payload, hmac_user_stru
         return;
     }
 
+    /* ¼ì²âµ½vendor ie */
+    pst_vendor_ie = (mac_11ntxbf_vendor_ie_stru *)puc_payload;
+    if (pst_vendor_ie->uc_len < (OAL_SIZEOF(mac_11ntxbf_vendor_ie_stru) - MAC_IE_HDR_LEN)) {
+        OAM_WARNING_LOG1(0, OAM_SF_ANY, "hmac_mgmt_update_11ntxbf_cap_etc:invalid vendor ie len[%d]",
+                         pst_vendor_ie->uc_len);
+        return;
+    }
+
     /* ¼ì²âµ½vendor ie*/
     pst_vendor_ie = (mac_11ntxbf_vendor_ie_stru *)puc_payload;
 

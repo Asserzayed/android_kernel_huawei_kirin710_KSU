@@ -3069,6 +3069,7 @@ oal_bool_enum_uint8  mac_is_wmm_ie_etc(oal_uint8 *puc_ie)
     /* |3    | 1       | 1          | 1       | 1       | ---------------- | */
     /* --------------------------------------------------------------------- */
     if((puc_ie[0] == MAC_EID_WMM) &&
+       (puc_ie[1] >= MAC_WMM_IE_LEN) &&
        (puc_ie[2] == MAC_WMM_OUI_BYTE_ONE)
         && (puc_ie[3] == MAC_WMM_OUI_BYTE_TWO)
         && (puc_ie[4] == MAC_WMM_OUI_BYTE_THREE) && /* OUI */

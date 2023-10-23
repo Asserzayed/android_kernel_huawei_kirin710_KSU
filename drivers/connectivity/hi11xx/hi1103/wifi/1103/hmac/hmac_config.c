@@ -4644,7 +4644,7 @@ oal_uint32  hmac_config_set_txpower_etc(mac_vap_stru *pst_mac_vap, oal_uint16 us
     mac_vap_stru                    *pst_vap;
 #endif
     l_value = (*((oal_int32 *)puc_param) < 0) ? 0 : (*((oal_int32 *)puc_param));
-    if (!l_value)
+    if ((!l_value) || ((oal_uint32)(l_value + 5) < (oal_uint32)l_value))
     {
         return ul_ret;
     }
@@ -9130,34 +9130,21 @@ oal_uint32 hmac_config_tas_rssi_access(mac_vap_stru *pst_mac_vap, oal_uint16 us_
 
 oal_uint32  hmac_config_get_country_etc(mac_vap_stru *pst_mac_vap, oal_uint16 *pus_len, oal_uint8 *puc_param)
 {
-#if 1
 #if (_PRE_MULTI_CORE_MODE_OFFLOAD_DMAC == _PRE_MULTI_CORE_MODE)
-    oal_int8      ac_tmp_buff[OAM_PRINT_FORMAT_LENGTH];
-    mac_regdomain_info_stru *pst_regdomain_info                     = OAL_PTR_NULL;
-
-
-    mac_get_regdomain_info_etc(&pst_regdomain_info);
-
-    OAL_SPRINTF(ac_tmp_buff, sizeof(ac_tmp_buff), "getcountry code is : %c%c.\n", pst_regdomain_info->ac_country[0], pst_regdomain_info->ac_country[1]);
-    oam_print_etc(ac_tmp_buff);
-#else
-    oal_int8                 *pc_curr_cntry;
-    mac_cfg_get_country_stru *pst_param;
+    mac_regdomain_info_stru     *pst_regdomain_info = OAL_PTR_NULL;
+    mac_cfg_get_country_stru    *pst_param;
 
     pst_param = (mac_cfg_get_country_stru *)puc_param;
 
-    pc_curr_cntry = mac_regdomain_get_country_etc();
+    mac_get_regdomain_info_etc(&pst_regdomain_info);
 
-    pst_param->ac_country[0] = pc_curr_cntry[0];
-    pst_param->ac_country[1] = pc_curr_cntry[1];
-    pst_param->ac_country[2] = pc_curr_cntry[2];
+    pst_param->ac_country[0] = pst_regdomain_info->ac_country[0];
+    pst_param->ac_country[1] = pst_regdomain_info->ac_country[1];
+    pst_param->ac_country[2] = pst_regdomain_info->ac_country[2];
+    *pus_len = WLAN_COUNTRY_STR_LEN;
 
-    *pus_len = OAL_SIZEOF(mac_cfg_get_country_stru);
-
-    OAM_INFO_LOG2(pst_mac_vap->uc_vap_id, OAM_SF_CFG, "{hmac_config_get_country_etc::country[0]=%c, country[1]=%c.}",
-                  (oal_uint8)pst_param->ac_country[0], (oal_uint8)pst_param->ac_country[1]);
 #endif
-#endif
+
     OAM_INFO_LOG0(pst_mac_vap->uc_vap_id, OAM_SF_CFG, "hmac_config_get_country_etc");
 
     return OAL_SUCC;
@@ -12752,9 +12739,6 @@ oal_uint32  hmac_config_set_txbf_cap(mac_vap_stru *pst_mac_vap, oal_uint16 us_le
 #endif
     mac_mib_set_VHTSUBeamformeeOptionImplemented(pst_mac_vap, en_rx_switch);
     mac_mib_set_VHTBeamformeeNTxSupport(pst_mac_vap, uc_rx_sts_num);
-#if (WLAN_MU_BFEE_ACTIVED == WLAN_MU_BFEE_ENABLE)
-    mac_mib_set_VHTMUBeamformeeOptionImplemented(pst_mac_vap, en_rx_switch);
-#endif
 
     OAM_WARNING_LOG3(pst_mac_vap->uc_vap_id, OAM_SF_ANY, "{hmac_config_set_txbf_cap::rx_cap[%d], tx_cap[%d], rx_sts_nums[%d].}",
                                 en_rx_switch, en_tx_switch, uc_rx_sts_num);
@@ -12767,6 +12751,42 @@ oal_uint32  hmac_config_set_txbf_cap(mac_vap_stru *pst_mac_vap, oal_uint16 us_le
 
 }
 
+#ifdef _PRE_WLAN_FEATURE_TXBF
+
+oal_uint32 hmac_config_vap_update_txbf_cap_etc(mac_vap_stru *pst_mac_vap, oal_bool_enum_uint8 en_txbf_rx_cap)
+{
+    oal_uint32              ul_ret;
+    oal_uint16              us_len;
+    oal_uint8               uc_rx_sts_num  = 0;
+
+    /* 当前mac device只支持bfee 不支持bfer 当前只处理bfee能力变化，bfer TBD */
+    uc_rx_sts_num = (en_txbf_rx_cap & OAL_TRUE) ? VHT_BFEE_NTX_SUPP_STS_CAP : 1;
+
+#ifdef _PRE_WLAN_FEATURE_TXBF_HT
+    mac_mib_set_ReceiveStaggerSoundingOptionImplemented(pst_mac_vap, en_txbf_rx_cap);
+    mac_mib_set_NumberCompressedBeamformingMatrixSupportAntenna(pst_mac_vap, uc_rx_sts_num);
+    mac_mib_set_ExplicitCompressedBeamformingFeedbackOptionImplemented(pst_mac_vap, en_txbf_rx_cap & WLAN_MIB_HT_ECBF_DELAYED);
+    pst_mac_vap->st_txbf_add_cap.bit_channel_est_cap = en_txbf_rx_cap;
+#endif
+    mac_mib_set_VHTSUBeamformeeOptionImplemented(pst_mac_vap, en_txbf_rx_cap);
+    mac_mib_set_VHTBeamformeeNTxSupport(pst_mac_vap, uc_rx_sts_num);
+
+    OAM_WARNING_LOG1(pst_mac_vap->uc_vap_id, OAM_SF_TXBF, "hmac_config_vap_update_txbf_cap_etc::vap rx txbf cap[%d].", en_txbf_rx_cap);
+
+    /***************************************************************************
+        抛事件到DMAC层, 同步DMAC数据
+    ***************************************************************************/
+    us_len = OAL_SIZEOF(en_txbf_rx_cap);
+
+    ul_ret = hmac_config_send_event_etc(pst_mac_vap, WLAN_CFGID_TXBF_MIB_UPDATE, us_len, &en_txbf_rx_cap);
+    if (OAL_UNLIKELY(OAL_SUCC != ul_ret))
+    {
+        OAM_WARNING_LOG1(pst_mac_vap->uc_vap_id, OAM_SF_TXBF, "{hmac_config_vap_update_txbf_cap_etc::hmac_config_send_event_etc failed[%d].}", ul_ret);
+    }
+
+    return ul_ret;
+}
+#endif
 
 #if (_PRE_WLAN_FEATURE_BLACKLIST_LEVEL != _PRE_WLAN_FEATURE_BLACKLIST_NONE)
 

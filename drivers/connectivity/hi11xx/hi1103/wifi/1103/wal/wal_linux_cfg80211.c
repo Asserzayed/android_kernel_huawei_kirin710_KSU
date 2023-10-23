@@ -357,24 +357,15 @@ cookie_arry_stru        g_cookie_array_etc[WAL_COOKIE_ARRAY_SIZE];
 *****************************************************************************/
 #ifdef _PRE_WLAN_FEATURE_UAPSD
 
-oal_uint32 wal_find_wmm_uapsd_etc(oal_uint8 *puc_frame_body, oal_int32 l_len)
+OAL_STATIC oal_uint32 wal_find_wmm_uapsd_etc(oal_uint8 *puc_wmm_ie)
 {
-    oal_int32    l_index = 0;
-
     /* 判断 WMM UAPSD 是否使能 */
-    while (l_index < l_len)
-    {
-        if ((MAC_EID_WMM == puc_frame_body[l_index])
-            && (0 == oal_memcmp(puc_frame_body + l_index + 2, g_auc_wmm_oui_etc, MAC_OUI_LEN))
-            && (MAC_OUITYPE_WMM == puc_frame_body[l_index + 2 + MAC_OUI_LEN])
-            && (puc_frame_body[l_index + MAC_WMM_QOS_INFO_POS] & BIT7))
-        {
-            return OAL_TRUE;
-        }
-        else
-        {
-            l_index += (MAC_IE_HDR_LEN + puc_frame_body[l_index + 1]);
-        }
+    if (puc_wmm_ie[1] < MAC_WMM_QOS_INFO_POS) {
+        return OAL_FALSE;
+    }
+
+    if (puc_wmm_ie[MAC_WMM_QOS_INFO_POS] & BIT7) {
+        return OAL_TRUE;
     }
 
     return OAL_FALSE;
@@ -485,7 +476,7 @@ oal_uint32 wal_parse_wmm_ie_etc(oal_net_device_stru *pst_dev,
     /*  找到wmm ie，顺便判断下uapsd是否使能 */
     else
     {
-        if(OAL_FALSE == wal_find_wmm_uapsd_etc(pst_beacon_info->tail, pst_beacon_info->tail_len))
+        if(OAL_FALSE == wal_find_wmm_uapsd_etc(puc_wmm_ie))
         {
         /* 对应UAPSD 关*/
             uc_uapsd = OAL_FALSE;
@@ -957,6 +948,11 @@ OAL_STATIC oal_uint32  wal_parse_protocol_mode(
             uc_extended_supported_rates_num = puc_extended_supported_rates_ie[1];
         }
 
+        if ((uc_supported_rates_num + uc_extended_supported_rates_num) < uc_supported_rates_num) {
+            *pen_protocol = WLAN_PROTOCOL_BUTT;
+            return OAL_FAIL;
+        }
+
         if (4 == uc_supported_rates_num + uc_extended_supported_rates_num)
         {
             *pen_protocol = WLAN_LEGACY_11B_MODE;
@@ -1186,11 +1182,19 @@ OAL_STATIC oal_int32  wal_cfg80211_scan(
     oal_net_device_stru            *pst_netdev;
 #endif
 
-    if ((OAL_PTR_NULL == pst_wiphy) || (OAL_PTR_NULL == pst_request))
+    if (OAL_ANY_NULL_PTR2(pst_wiphy, pst_request))
     {
         OAM_ERROR_LOG2(0, OAM_SF_CFG, "{wal_cfg80211_scan::scan failed, null ptr, pst_wiphy[%p], pst_request[%p]!}", pst_wiphy, pst_request);
         goto fail;
     }
+
+    /* 判断扫描传入内存长度不能大于后续缓存空间大小，避免拷贝内存越界 */
+    if (pst_request->ie_len > WLAN_WPS_IE_MAX_SIZE) {
+        OAM_ERROR_LOG1(0, OAM_SF_CFG, "{wal_cfg80211_scan:: scan ie is too large to save. [%d]!}",
+            pst_request->ie_len);
+        return -OAL_EFAIL;
+    }
+
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,44))//TBD:确认正确的 Linux 版本号
     pst_netdev = pst_request->wdev->netdev;

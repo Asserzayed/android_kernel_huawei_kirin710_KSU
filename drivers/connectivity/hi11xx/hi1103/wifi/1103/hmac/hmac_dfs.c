@@ -729,37 +729,36 @@ OAL_STATIC oal_uint32  hmac_dfs_nol_timeout_fn(oal_void *p_arg)
 
 OAL_STATIC oal_uint32  hmac_dfs_nol_addchan(mac_device_stru *pst_mac_device, oal_uint8 uc_chan_idx)
 {
-    mac_dfs_nol_node_stru   *pst_nol_node;
+    mac_dfs_nol_node_stru   *pst_nol_node = OAL_PTR_NULL;
     oal_uint8                uc_chan_num = 0;
     oal_uint32               ul_ret;
 
     /*如果不可占用周期为0，则不添加新的nol信道*/
-    if(0 == pst_mac_device->st_dfs.st_dfs_info.ul_dfs_non_occupancy_period_time_ms)
-    {
+    if (pst_mac_device->st_dfs.st_dfs_info.ul_dfs_non_occupancy_period_time_ms == 0) {
         return OAL_SUCC;
     }
 
-    pst_nol_node = (mac_dfs_nol_node_stru *)OAL_MEM_ALLOC(OAL_MEM_POOL_ID_LOCAL, OAL_SIZEOF(mac_dfs_nol_node_stru), OAL_TRUE);
-    if (OAL_UNLIKELY(OAL_PTR_NULL == pst_nol_node))
-    {
-        OAM_ERROR_LOG0(0, OAM_SF_DFS, "{hmac_dfs_nol_addchan::memory not enough.}");
-
-        return OAL_ERR_CODE_ALLOC_MEM_FAIL;
-    }
-    OAL_MEMZERO(pst_nol_node, OAL_SIZEOF(mac_dfs_nol_node_stru));
-
-    pst_nol_node->uc_chan_idx  = uc_chan_idx;
-    pst_nol_node->uc_device_id = pst_mac_device->uc_device_id;
-
-    oal_dlist_add_tail(&(pst_nol_node->st_entry), &(pst_mac_device->st_dfs.st_dfs_nol));
-
-    mac_get_channel_num_from_idx_etc(pst_mac_device->en_max_band, uc_chan_idx, &uc_chan_num);
-    OAM_WARNING_LOG1(0, OAM_SF_DFS, "{[DFS]hmac_dfs_nol_addchan, add channel %d to NOL.}", uc_chan_num);
-
     /* 更新可用信道列列表 */
     ul_ret = hmac_dfs_update_available_channel_list(pst_mac_device, uc_chan_idx, OAL_TRUE);
-    if(OAL_SUCC == ul_ret)
-    {
+    if (ul_ret == OAL_SUCC) {
+        pst_nol_node = (mac_dfs_nol_node_stru *)OAL_MEM_ALLOC(OAL_MEM_POOL_ID_LOCAL, OAL_SIZEOF(mac_dfs_nol_node_stru), OAL_TRUE);
+        if (OAL_UNLIKELY(pst_nol_node == OAL_PTR_NULL)) {
+            OAM_ERROR_LOG0(0, OAM_SF_DFS, "{hmac_dfs_nol_addchan::memory not enough.}");
+
+            pst_mac_device->st_ap_channel_list[uc_chan_idx].en_ch_status = MAC_CHAN_DFS_REQUIRED;
+            return OAL_ERR_CODE_ALLOC_MEM_FAIL;
+        }
+
+        OAL_MEMZERO(pst_nol_node, OAL_SIZEOF(mac_dfs_nol_node_stru));
+
+        pst_nol_node->uc_chan_idx  = uc_chan_idx;
+        pst_nol_node->uc_device_id = pst_mac_device->uc_device_id;
+
+        oal_dlist_add_tail(&(pst_nol_node->st_entry), &(pst_mac_device->st_dfs.st_dfs_nol));
+
+        mac_get_channel_num_from_idx_etc(pst_mac_device->en_max_band, uc_chan_idx, &uc_chan_num);
+        OAM_WARNING_LOG1(0, OAM_SF_DFS, "{[DFS]hmac_dfs_nol_addchan, add channel %d to NOL.}", uc_chan_num);
+
         /* 启动Non-Occupancy Peroid定时器 */
         FRW_TIMER_CREATE_TIMER(&pst_nol_node->st_dfs_nol_timer,
                                 hmac_dfs_nol_timeout_fn,
@@ -1962,6 +1961,7 @@ oal_void test_csa(oal_uint8 uc_vap_id, oal_uint8 uc_chan_id, oal_uint8 uc_sw_cnt
     if (OAL_UNLIKELY(OAL_PTR_NULL == pst_netbuf))
     {
         OAM_ERROR_LOG0(pst_mac_vap->uc_vap_id, OAM_SF_DFS, "{test_csa::pst_netbuf null.}");
+        FRW_EVENT_FREE(pst_event_mem);
         return;
     }
 

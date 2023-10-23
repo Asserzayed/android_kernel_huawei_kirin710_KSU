@@ -582,7 +582,7 @@ int32 read_conf_from_nvram_etc(uint8 *pc_out, uint32 size, uint32 nv_number,  co
     ret = hisi_nve_direct_access(&info);
     if (size > sizeof(info.nv_data) || OAL_STRLEN(info.nv_data) >= size)
     {
-        INI_ERROR("read nvm{%s}lenth[%d] longer than input[%d]", info.nv_data, (uint32)OAL_STRLEN(info.nv_data), size);
+        INI_ERROR("read nvm item[%s] fail, lenth[%d] longer than input[%d]", nv_name, (uint32)OAL_STRLEN(info.nv_data), size);
         return INI_FAILED;
     }
     if (INI_SUCC == ret)

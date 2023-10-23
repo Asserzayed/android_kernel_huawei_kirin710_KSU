@@ -238,7 +238,7 @@ static int32 chr_write_errno_to_queue(uint32 ul_errno,uint8 uc_flag,uint8 *ptr_d
 
     /* for code run in interrupt context */
     sk_len = sizeof(CHR_DEV_EXCEPTION_STRU_PARA) + ul_len;
-    skb = alloc_skb(sk_len, oal_in_interrupt() ? GFP_ATOMIC : GFP_KERNEL);
+    skb = alloc_skb(sk_len, (oal_in_interrupt() || oal_in_atomic()) ? GFP_ATOMIC : GFP_KERNEL);
     if( NULL == skb)
     {
         CHR_ERR("chr errno alloc skbuff failed! len=%d, errno=%x\n", sk_len, ul_errno);
@@ -645,7 +645,7 @@ int32 chr_bfg_dev_tx_handler(uint32 ul_errno)
 
     /*alloc skb buf*/
     sk_len = sizeof(uint32) + sizeof(struct ps_packet_head) + sizeof(struct ps_packet_end);
-    skb = alloc_skb(sk_len, oal_in_interrupt() ? GFP_ATOMIC : GFP_KERNEL);
+    skb = alloc_skb(sk_len, (oal_in_interrupt() || oal_in_atomic()) ? GFP_ATOMIC : GFP_KERNEL);
     if( NULL == skb)
     {
         CHR_ERR("alloc skbuff failed! len=%d, errno=0x%x\n", sk_len, ul_errno);

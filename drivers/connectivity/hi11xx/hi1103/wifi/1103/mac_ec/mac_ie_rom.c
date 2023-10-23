@@ -630,6 +630,8 @@ oal_uint32 mac_ie_get_wpa_cipher(oal_uint8 *puc_ie, mac_crypto_settings_stru *ps
 {
     oal_uint16                   us_suites_count;
     oal_uint8                    uc_suite_idx;
+    oal_uint8                    uc_ie_len;
+    oal_uint8                   *puc_src_ie = OAL_PTR_NULL;
 
     if (OAL_PTR_NULL == puc_ie || OAL_PTR_NULL == pst_crypto)
     {
@@ -651,6 +653,13 @@ oal_uint32 mac_ie_get_wpa_cipher(oal_uint8 *puc_ie, mac_crypto_settings_stru *ps
     /* --------------------------------------------------------------------- */
     /*                                                                       */
     /*************************************************************************/
+    uc_ie_len = puc_ie[1];
+    if (uc_ie_len < MAC_MIN_WPA_LEN) {
+        OAM_WARNING_LOG1(0, OAM_SF_ANY, "mac_ie_get_wpa_cipher:invalid wpa ie len[%d]",uc_ie_len);
+        return  OAL_ERR_CODE_MSG_LENGTH_ERR;
+    }
+
+    puc_src_ie = puc_ie + 1 + 1;
     puc_ie += 1 + 1 + 4 + 2;
     pst_crypto->ul_wpa_versions = WITP_WPA_VERSION_1;
 
@@ -673,11 +682,22 @@ oal_uint32 mac_ie_get_wpa_cipher(oal_uint8 *puc_ie, mac_crypto_settings_stru *ps
     /* Pairwise Cipher Suite 最多存2个 */
     for (uc_suite_idx = 0; uc_suite_idx < us_suites_count; uc_suite_idx++)
     {
-        if (uc_suite_idx < WLAN_PAIRWISE_CIPHER_SUITES)
-        {
-            pst_crypto->aul_pair_suite[uc_suite_idx] = *(oal_uint32 *)puc_ie;
+        if (MAC_IE_REAMIN_LEN_IS_ENOUGH(puc_src_ie, puc_ie, uc_ie_len, 4)) {
+            if (uc_suite_idx < WLAN_PAIRWISE_CIPHER_SUITES)
+            {
+                pst_crypto->aul_pair_suite[uc_suite_idx] = *(oal_uint32 *)puc_ie;
+            }
+            puc_ie += 4;
+
+        } else {
+            return OAL_ERR_CODE_MSG_LENGTH_ERR;
         }
-        puc_ie += 4;
+    }
+
+    if (MAC_IE_REAMIN_LEN_IS_ENOUGH(puc_src_ie, puc_ie, uc_ie_len, 2) == OAL_FALSE) {
+        OAM_WARNING_LOG1(0, OAM_SF_ANY,
+            "mac_ie_get_wpa_cipher:no enough mem for suites_count, wpa ie len[%d]", uc_ie_len);
+        return OAL_ERR_CODE_MSG_LENGTH_ERR;
     }
 
     us_suites_count = OAL_MAKE_WORD16(puc_ie[0], puc_ie[1]);
@@ -694,11 +714,19 @@ oal_uint32 mac_ie_get_wpa_cipher(oal_uint8 *puc_ie, mac_crypto_settings_stru *ps
     /* AKM Suite 最多存2个 */
     for (uc_suite_idx = 0; uc_suite_idx < us_suites_count; uc_suite_idx++)
     {
-        if (uc_suite_idx < WLAN_AUTHENTICATION_SUITES)
-        {
-            pst_crypto->aul_akm_suite[uc_suite_idx] = *(oal_uint32 *)puc_ie;
+        if (MAC_IE_REAMIN_LEN_IS_ENOUGH(puc_src_ie, puc_ie, uc_ie_len, 4)) {
+            if (uc_suite_idx < WLAN_AUTHENTICATION_SUITES)
+            {
+                pst_crypto->aul_akm_suite[uc_suite_idx] = *(oal_uint32 *)puc_ie;
+            }
+            puc_ie += 4;
+
+        } else {
+            OAM_WARNING_LOG2(0, OAM_SF_ANY, "mac_ie_get_wpa_cipher:AKM Suite, invalid ie len[%d],us_suites_count[%d]",
+                uc_ie_len, us_suites_count);
+            return OAL_ERR_CODE_MSG_LENGTH_ERR;
         }
-        puc_ie += 4;
+
     }
     return OAL_SUCC;
 }
@@ -712,7 +740,7 @@ oal_uint32 mac_ie_get_rsn_cipher(oal_uint8 *puc_ie, mac_crypto_settings_stru *ps
     oal_uint8                    uc_ie_len;
     oal_uint8                   *puc_src_ie;
 
-    if (OAL_PTR_NULL == puc_ie || OAL_PTR_NULL == pst_crypto)
+    if (OAL_ANY_NULL_PTR2(puc_ie, pst_crypto))
     {
         return OAL_ERR_CODE_PTR_NULL;
     }
@@ -737,6 +765,11 @@ oal_uint32 mac_ie_get_rsn_cipher(oal_uint8 *puc_ie, mac_crypto_settings_stru *ps
     /*                                                                       */
     /*************************************************************************/
     uc_ie_len  = puc_ie[1];
+    if (uc_ie_len < MAC_MIN_RSN_LEN) {
+        OAM_WARNING_LOG1(0, OAM_SF_ANY, "mac_ie_get_rsn_cipher:invalid rsn ie len[%d]", uc_ie_len);
+        return OAL_FAIL;
+    }
+
     puc_src_ie = puc_ie + 2;
     puc_ie    += 2;
 
