@@ -1,6 +1,11 @@
 # android_kernel_huawei_kirin710_EMUI9.1.0_KernelSU-Exp
-Kirin 710 EMUI 9.1.0版本内核，尝试支持KernelSU。  
-目前停止维护。需要的朋友可自行编译。  
-停止维护原因：[Wiki](https://github.com/Coconutat/HuaweiP10-GSI-And-Modify-Tutorial/wiki/8.%E4%B8%AA%E4%BA%BA%E7%9A%84%E5%8D%8E%E4%B8%BAKernelSU%E5%86%85%E6%A0%B8%E5%88%97%E8%A1%A8%E5%8F%8A%E5%85%AC%E5%91%8A)  
-现在编译托管自GitHub Action。  
-可以在GitHub Action下载:[Github Action](https://github.com/Coconutat/android_kernel_huawei_kirin710_KSU/actions)
+- Automated builds thanks to @coconutat, this build is tested for Nova 3i (specifically) Global version INE-LX1R | Feel free to test for your device, follow this [guide](https://github.com/Coconutat/Huawei-GSI-And-Modify-Or-Support-KernelSU-Tutorial/wiki/7.KernelSU%E9%80%82%E9%85%8DEMUI9%E6%88%969.1.0%E7%B3%BB%E7%BB%9F%E7%9A%84%E5%86%85%E6%A0%B8)
+- Wifi patches for latest EMUI builds >=.300
+- Latest KernelSU can be built + I might release them automatically
+- atm, I'll test them first then release. You can compile for yourself if you wish (fork).
+# Credits
+These people made this build possible
+- @Coconutat
+- @A2L5E0X1
+- @Iceows
+- @Frax3r
