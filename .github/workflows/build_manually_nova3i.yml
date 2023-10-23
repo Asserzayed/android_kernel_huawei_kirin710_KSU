@@ -1,4 +1,4 @@
-name: Build Huawei-Kirin710-KSU-EMUI9.1.0-Kernel
+name: Build Nova3i-Kirin710-KSU-EMUI9.1.0-Kernel
 on:
   workflow_dispatch:
   schedule:
